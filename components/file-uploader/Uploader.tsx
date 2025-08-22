@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import {FileRejection, useDropzone} from "react-dropzone";
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from "@/lib/utils";
-import { RenderEmptyState } from "./RenderState";
+import { RenderEmptyState, RenderErrorState, RenderUploadedState } from "./RenderState";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
 import { size } from "zod";
@@ -43,11 +43,11 @@ async function uploadFile(file: File) {
 try {
   //1. Get presigned URL
 
-  const preSignedResponse = await fetch("/api/s3/upload", {
+  const preSignedResponse = await fetch("/api/s3/upload", { 
     method: "POST",
     headers: {"Content-Type": "application/json" },
       body: JSON.stringify({
-      fileNName: file.name,
+      fileName: file.name,
       contentType: file.type,
       size: file.size,
       isImage: true,
@@ -69,11 +69,64 @@ try {
 
   const { presignedUrl, key } = await preSignedResponse.json();
 
-  await new promise((resolve, reject) => {
-    const  
-  })}
+  await new Promise<void>((resolve, reject) => {
+    const  xhr = new XMLHttpRequest()
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) { 
+      const percentageCompleted =  (event.loaded / event.total) * 100
+        setFileState((prev) => ({
+   ...prev,
+   progress: Math.round(percentageCompleted)
+
+  }));
+
+      }
+
+    }
+
+   xhr.onload = () => {
+    if(xhr.status === 200 || xhr.status === 204) {
+         setFileState((prev) => ({
+   ...prev,
+   progress: 100,
+   uploading: false,
+   key: key
+  }));
+
+  toast.success("File uploaded successfully");
+
+  resolve();
+
+    } else {
+      reject(new Error("Upload failed..."));
+    }
  
-} catch {}
+
+   };
+   
+    xhr.onerror = () => {
+      reject(new Error("upload failed"));
+    };
+
+   xhr.open("PUT", presignedUrl);
+   xhr.setRequestHeader("Content-Type", file.type);
+   xhr.send(file);
+
+  });
+ 
+} catch {
+
+  toast.error("Something went wrong");
+
+     setFileState((prev) => ({
+   ...prev,
+   progress: 0,
+    error: true,
+    uploading: false,
+   }));
+
+}
 
 
 }
@@ -93,6 +146,8 @@ try {
       isDeleting: false,
       fileType: "image",
     });
+
+    uploadFile(file);
    }
    
   }, []);
@@ -112,6 +167,24 @@ if(tooManyFiles) {
   }
 }
 }
+}
+
+function renderContent() {
+  if(fileState.uploading) {
+    return <h1>uploading...</h1>;
+  }
+
+  if(fileState.error) {
+    return <RenderErrorState />;
+  }
+
+if(fileState.objectUrl) {
+  return (
+    <RenderUploadedState previewUrl={fileState.objectUrl} /> 
+  );
+}
+return <RenderEmptyState isDragActive={isDragActive} />;
+
 }
 
      const {getRootProps, getInputProps, isDragActive} = useDropzone({
@@ -135,7 +208,7 @@ if(tooManyFiles) {
      <
      CardContent className="flex items-center justify-center h-full w-full p-4">
           <input {...getInputProps()} />
-          < RenderEmptyState isDragActive={isDragActive} />
+        {renderContent()}
      </CardContent>
     </Card>
   )
