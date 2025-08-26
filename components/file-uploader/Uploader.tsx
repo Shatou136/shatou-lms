@@ -23,7 +23,7 @@ interface UploaderState {
 export function Uploader() {
 
 const [fileState, setFileState] = useState<UploaderState>({
-  error: true,
+  error: false,
   file: null,
   id: null,
   uploading: false,
@@ -32,7 +32,7 @@ const [fileState, setFileState] = useState<UploaderState>({
   fileType: "image",
 });
 
-async function uploadFile(file: File) {
+ async function uploadFile(file: File) {
   setFileState((prev) => ({
    ...prev,
    uploading: true,
@@ -43,7 +43,7 @@ async function uploadFile(file: File) {
 try {
   //1. Get presigned URL
 
-  const preSignedResponse = await fetch("/api/s3/upload", { 
+  const presignedResponse = await fetch("/api/s3/upload", { 
     method: "POST",
     headers: {"Content-Type": "application/json" },
       body: JSON.stringify({
@@ -54,7 +54,7 @@ try {
       }),
   });
 
-  if(!preSignedResponse.ok) {
+  if(!presignedResponse.ok) {
     toast.error("Failed to get presigned URL");
     setFileState((prev) => ({
    ...prev,
@@ -67,7 +67,7 @@ try {
   
   }
 
-  const { presignedUrl, key } = await preSignedResponse.json();
+  const { presignedUrl, key } = await presignedResponse.json();
 
   await new Promise<void>((resolve, reject) => {
     const  xhr = new XMLHttpRequest()
@@ -75,6 +75,7 @@ try {
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) { 
       const percentageCompleted =  (event.loaded / event.total) * 100
+
         setFileState((prev) => ({
    ...prev,
    progress: Math.round(percentageCompleted)
@@ -100,11 +101,10 @@ try {
 
     } else {
       reject(new Error("Upload failed..."));
-    }
- 
+    } 
+    };
 
-   };
-   
+    
     xhr.onerror = () => {
       reject(new Error("upload failed"));
     };
@@ -112,7 +112,6 @@ try {
    xhr.open("PUT", presignedUrl);
    xhr.setRequestHeader("Content-Type", file.type);
    xhr.send(file);
-
   });
  
 } catch {
@@ -128,12 +127,12 @@ try {
 
 }
 
-
 }
 
       const onDrop = useCallback((acceptedFiles: File[]) => {
   
    if(acceptedFiles.length > 0) {
+
     const file = acceptedFiles[0];
     
     setFileState({
@@ -153,20 +152,25 @@ try {
   }, []);
 
 function rejectedFiles(fileRejection: FileRejection[]) {
+
  if(fileRejection.length) {
+
   const tooManyFiles = fileRejection.find(
     (rejection) => rejection.errors[0].code === "too-many-files");
 
     const fileSizeToBig = fileRejection.find((rejection) =>
-    rejection.errors[0].code === "file-to-large ");
+    rejection.errors[0].code === "file-too-large ");
 
-if(tooManyFiles) {
-  toast.error("Too many files selected, maxis 1");
-  if(fileSizeToBig) {
+     if(fileSizeToBig) {
     toast.error("File Size exceed the limit")
   }
-}
-}
+
+if(tooManyFiles) {
+  toast.error("Too many files selected, max is 1");
+  }
+
+ }
+
 }
 
 function renderContent() {
@@ -183,6 +187,7 @@ if(fileState.objectUrl) {
     <RenderUploadedState previewUrl={fileState.objectUrl} /> 
   );
 }
+
 return <RenderEmptyState isDragActive={isDragActive} />;
 
 }
@@ -192,7 +197,7 @@ return <RenderEmptyState isDragActive={isDragActive} />;
         accept: {"image/*": [] },
         maxFiles: 1,
         multiple: false,
-        maxSize: 5*1024*1024,
+        maxSize: 5 * 1024 * 1024, //5mb calculation
         onDropRejected: rejectedFiles,
        });
 

@@ -18,9 +18,9 @@ export function RenderEmptyState({isDragActive}: {isDragActive: boolean}) {
         Drop your files here or <span className="text-primary font-bold
         cursor-pointer">Click to upload</span> 
     </p>
-    <Button type="buttton" className="mt-4">Select File</Button>
+    <Button type="button" className="mt-4">Select File</Button>
 </div>
-    )
+    );
 }
 
 export function RenderErrorState() {
@@ -62,9 +62,9 @@ export function RenderUploadedState({ previewUrl }: {previewUrl: string }) {
 
 
 export function RenderUploadingState({
-    progess, file
+    progress, file
 }: {
-    progrss: number;
+    progress: number;
     file: File;
 }) 
     { 
