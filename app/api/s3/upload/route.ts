@@ -4,11 +4,12 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import { S3 } from '../../../lib/S3Client';
-import env from '../../../lib/env';
+import env from '@/lib/env';
+import { S3 } from '@/lib/S3Client';
+
 
 // Schema validation
-const fileUploadSchema = z.object({
+ export const fileUploadSchema = z.object({
   fileName: z.string().min(1, { message: 'Filename is required' }),
   contentType: z.string().min(1, { message: 'Content type is required' }),
   size: z.number().positive({ message: 'Size must be a positive number' }),
@@ -20,9 +21,10 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const validation = fileUploadSchema.safeParse(body);
+
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'Invalid Request Body', details: validation.error.format() },
+        { error: "Invalid Request Body" },
         { status: 400 }
       );
     }
@@ -33,21 +35,26 @@ export async function POST(request: Request) {
 
     const command = new PutObjectCommand({
       Bucket: env.NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES,
-      Key: uniqueKey,
       ContentType: contentType,
       ContentLength: size,
+       Key: uniqueKey,
     });
 
-    const preSignedUrl = await getSignedUrl(S3, command, { expiresIn: 360 }); // 6 minutes
+    const presignedUrl = await getSignedUrl(S3, command, {
+       expiresIn: 360,  //URL expires in 6 minutes
+     }); 
 
-    return NextResponse.json({ preSignedUrl, key: uniqueKey });
-  } catch (err) {
-    console.error('Error generating presigned URL:', err);
+    const response = {
+       presignedUrl,
+        Key: uniqueKey 
+    };
+
+    return NextResponse.json(response);
+
+  } catch {
     return NextResponse.json(
-      { error: 'Failed to generate presigned URL' },
+      { error: "Failed to generate presigned URL" },
       { status: 500 }
     );
   }
-}
-
 }
