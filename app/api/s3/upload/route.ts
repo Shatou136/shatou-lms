@@ -4,10 +4,10 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import env from '@/lib/env';
 import { S3 } from '@/lib/S3Client';
 import arcjet, { detectBot, fixedWindow } from '@/lib/arcjet';
 import { requireAdmin } from '@/app/data/admin/require-admin';
+import env from '@/lib/env';
 
 
 // Schema validation
@@ -65,11 +65,12 @@ if(decision.isDenied()) {
     const command = new PutObjectCommand({
       Bucket: env.NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES,
       ContentType: contentType,
-       Key: uniqueKey,
+      // ContentLength: size,
+      Key: uniqueKey,
     });
 
     const presignedUrl = await getSignedUrl(S3, command, {
-       expiresIn: 600,  //URL expires in 10 minutes
+       expiresIn: 3600,  //URL expires in 1 hour
      }); 
 
     const response = {

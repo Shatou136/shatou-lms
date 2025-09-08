@@ -77,16 +77,15 @@ try {
   const { presignedUrl, key } = await presignedResponse.json();
 
   await new Promise<void>((resolve, reject) => {
-    const  xhr = new XMLHttpRequest()
+    const xhr = new XMLHttpRequest()
 
     xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) { 
+      if(event.lengthComputable) { 
       const percentageCompleted =  (event.loaded / event.total) * 100
 
         setFileState((prev) => ({
-   ...prev,
-   progress: Math.round(percentageCompleted)
-
+        ...prev,
+        progress: Math.round(percentageCompleted)
   }));
 
       }
@@ -119,7 +118,7 @@ try {
     };
 
    xhr.open("PUT", presignedUrl);
-   xhr.setRequestHeader("Content-Type", file.type);
+   xhr.setRequestHeader("Content-Type", file.type); 
    xhr.send(file);
   });
  

@@ -19,10 +19,10 @@ const env = createEnv({
   },
 
   client: {
-    NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES: z.string().min(1),
+   NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES: z.string().min(1),
   },
   experimental__runtimeEnv: {
-     NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES: process.env.NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES,
+   NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES: process.env.NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES
   },
 });
 
