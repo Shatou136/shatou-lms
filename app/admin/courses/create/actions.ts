@@ -60,6 +60,7 @@ export async function CreateCourse(values: CourseSchemaType): Promise<ApiRespons
             data: {
                 ...validation.data,
                 userId: session?.user.id as string,
+                   fileKey: validation.data.fileKey ?? "",
             },
         }); 
         return {
